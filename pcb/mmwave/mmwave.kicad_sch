@@ -6,8 +6,8 @@
 
   (title_block
     (title "Main board")
-    (date "2022-07-23")
-    (rev "A")
+    (date "2022-07-29")
+    (rev "B")
   )
 
   (lib_symbols
@@ -1262,7 +1262,7 @@
   (no_connect (at 78.74 45.72) (uuid 81f0127a-3bb4-4237-bd8b-65661c09e1ab))
   (no_connect (at 78.74 43.18) (uuid 81f0127a-3bb4-4237-bd8b-65661c09e1ac))
   (no_connect (at 34.29 190.5) (uuid b8b9c332-d62b-47ec-92b6-aece6fb4da71))
-  (no_connect (at 40.64 190.5) (uuid b8b9c332-d62b-47ec-92b6-aece6fb4da71))
+  (no_connect (at 40.64 190.5) (uuid b8b9c332-d62b-47ec-92b6-aece6fb4da72))
   (no_connect (at 115.57 105.41) (uuid c7d45a8f-7d2f-4cbe-9c5e-dfb6d81c5452))
   (no_connect (at 115.57 100.33) (uuid c7d45a8f-7d2f-4cbe-9c5e-dfb6d81c5453))
   (no_connect (at 80.01 107.95) (uuid ebd52096-7170-407f-9562-d33b9471de2d))
@@ -2090,7 +2090,7 @@
     (property "Reference" "U3" (id 0) (at 222.25 102.87 0)
       (effects (font (size 1.524 1.524) bold) (justify left bottom))
     )
-    (property "Value" "EKMB1305111K" (id 1) (at 222.25 120.65 0)
+    (property "Value" "EKMB1310111K" (id 1) (at 222.25 120.65 0)
       (effects (font (size 1.016 1.016)) (justify left top))
     )
     (property "Footprint" "misc:PIR-EKMB1310111K-EDGE" (id 2) (at 222.25 125.73 0)
@@ -2796,7 +2796,7 @@
     (property "Reference" "U4" (id 0) (at 207.01 41.91 0)
       (effects (font (size 1.524 1.524) bold) (justify left bottom))
     )
-    (property "Value" "SHT4X" (id 1) (at 207.01 57.15 0)
+    (property "Value" "SHT45-AD1B-R2" (id 1) (at 207.01 57.15 0)
       (effects (font (size 1.016 1.016)) (justify left top))
     )
     (property "Footprint" "smt-dfn:DFN4" (id 2) (at 207.01 59.055 0)
@@ -3320,10 +3320,10 @@
       (reference "U2") (unit 1) (value "ESP32-C3-WROOM-02") (footprint "misc:ESP32-C3-WROOM")
     )
     (path "/2598b8aa-86d0-462c-8460-32c0cde63fbc"
-      (reference "U3") (unit 1) (value "EKMB1305111K") (footprint "misc:PIR-EKMB1310111K-EDGE")
+      (reference "U3") (unit 1) (value "EKMB1310111K") (footprint "misc:PIR-EKMB1310111K-EDGE")
     )
     (path "/a3348e31-db68-4af5-80ae-8b4b9734257d"
-      (reference "U4") (unit 1) (value "SHT4X") (footprint "smt-dfn:DFN4")
+      (reference "U4") (unit 1) (value "SHT45-AD1B-R2") (footprint "smt-dfn:DFN4")
     )
     (path "/ce420901-783b-4425-ad57-a5f8924f5a79"
       (reference "U5") (unit 1) (value "N/A") (footprint "misc:PIR-EKMB1310111K")
