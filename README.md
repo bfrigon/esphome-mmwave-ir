@@ -23,3 +23,7 @@ Components
 - ESP32-C3
 - USB-C (for power only)
 
+
+
+![alt tag](/pictures/board-rev-a.jpg "Board (Revision A)")
+
