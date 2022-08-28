@@ -1,0 +1,288 @@
+#####################################################################
+
+substitutions:
+  node_name: "esp-sen-bathroom"
+  node_description: "Bathroom sensor"
+  hass_entity_prefix: "Bathroom sensor"
+  
+
+#####################################################################
+
+
+#####################################################################
+#
+# System
+#
+#####################################################################
+esphome:
+  name: $node_name
+  comment: $node_description
+  platformio_options:
+    board_build.flash_mode: dio
+    
+  on_boot:
+    priority: 250.0
+    then:
+      - switch.turn_on: mmwave_cfg_need_update
+
+preferences:
+  flash_write_interval: 30s    
+
+esp32:
+  board: esp32-c3-devkitm-1
+  framework:
+    type: esp-idf
+
+logger:
+
+api:
+
+ota:
+  password: !secret ota_pwd_esp-sen-bathroom
+  id: my_ota
+
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+
+
+
+#####################################################################
+#
+# Peripherals
+#
+#####################################################################
+uart:
+  id: uart_bus
+  tx_pin: GPIO19
+  rx_pin: GPIO18
+  baud_rate: 115200
+  debug:
+    direction: BOTH
+    dummy_receiver: true
+    after:
+      delimiter: "\n"
+    sequence:
+      - lambda: UARTDebug::log_string(direction, bytes);
+
+i2c:
+  sda: 5
+  scl: 6
+  scan: true
+  id: bus_a
+
+
+
+#####################################################################
+#
+# Timers
+#
+#####################################################################
+interval:
+
+  #-------------------------------------------------
+  # Check if mmWave config need to be pushed
+  #-------------------------------------------------
+  - interval: 1sec
+    then:
+    - if:
+        condition:
+          - switch.is_on: mmwave_cfg_need_update
+          - not:
+            - script.is_running: update_mmwave_config
+        then:
+          - script.execute: update_mmwave_config
+
+
+
+#####################################################################
+#
+# Binary sensors
+#
+#####################################################################
+binary_sensor:
+
+  #-------------------------------------------------
+  # mmWave occupency status
+  #-------------------------------------------------
+  - platform: gpio
+    name: "$hass_entity_prefix Occupancy"
+    device_class: occupancy
+    pin:
+      number: GPIO1
+      mode: INPUT_PULLDOWN
+  
+  #-------------------------------------------------
+  # IR motion detection status
+  #-------------------------------------------------
+  - platform: gpio
+    name: "$hass_entity_prefix IR Motion"
+    device_class: motion
+    pin:
+      number: GPIO7
+      mode: INPUT_PULLDOWN
+    filters:
+      - delayed_off: 1000ms
+
+
+
+#####################################################################
+#
+# Number sensors
+#
+#####################################################################
+number:
+
+  #-------------------------------------------------
+  # mmWave max detection distance
+  #-------------------------------------------------
+  - platform: template
+    name: "$hass_entity_prefix Distance"
+    id: mmwave_range
+    entity_category: config
+    icon: mdi:signal-distance-variant
+    min_value: 15
+    max_value: 1350
+    initial_value: 315
+    restore_value: true
+    optimistic: true
+    step: 15
+    unit_of_measurement: cm
+    mode: box
+    set_action:
+      - switch.turn_on: mmwave_cfg_need_update
+      
+  #-------------------------------------------------
+  # mmWave output latency
+  #-------------------------------------------------
+  - platform: template
+    name: $hass_entity_prefix Latency
+    id: mmwave_latency
+    entity_category: config
+    icon: mdi:timer-outline
+    min_value: 0
+    max_value: 65000
+    initial_value: 12500
+    restore_value: true
+    optimistic: true
+    step: 25
+    unit_of_measurement: ms
+    mode: box
+    set_action:
+      - switch.turn_on: mmwave_cfg_need_update
+      
+  #-------------------------------------------------
+  # mmWave detection sensitivity
+  #-------------------------------------------------
+  - platform: template
+    name: $hass_entity_prefix Sensitivity
+    id: mmwave_sensitivity
+    entity_category: config
+    min_value: 0
+    max_value: 9
+    initial_value: 7
+    restore_value: true
+    optimistic: true
+    mode: box
+    step: 1
+    set_action:
+      - switch.turn_on: mmwave_cfg_need_update
+
+
+
+#####################################################################
+#
+# Binary sensors
+#
+#####################################################################
+switch:
+
+  #-------------------------------------------------
+  # mmWave status led enabled
+  #-------------------------------------------------
+  - platform: template
+    name: "$hass_entity_prefix Status LED"
+    id: mmwave_status_led
+    entity_category: config
+    icon: mdi:led-on
+    optimistic: true
+    restore_state: true
+    turn_on_action:
+      - switch.turn_on: mmwave_cfg_need_update
+    turn_off_action:
+      - switch.turn_on: mmwave_cfg_need_update
+
+  #-------------------------------------------------
+  # (internal) mmWave config changed flag
+  #-------------------------------------------------
+  - platform: template
+    id: mmwave_cfg_need_update
+    internal: true
+    optimistic: true
+    restore_state: false
+
+
+
+#####################################################################
+#
+# Sensors
+#
+#####################################################################
+sensor:
+
+  #-------------------------------------------------
+  # Temperature/humidity sensor
+  #-------------------------------------------------
+  - platform: sht4x
+    heater_max_duty: 0.05
+    temperature:
+      name: "$hass_entity_prefix Temperature"
+    humidity:
+      name: "$hass_entity_prefix Humidity"
+
+  #-------------------------------------------------
+  # WiFi signal strength
+  #-------------------------------------------------
+  - platform: wifi_signal
+    name: "$hass_entity_prefix Wifi signal"
+    update_interval: 60s  
+  
+  
+
+#####################################################################
+#
+# Scripts
+#
+#####################################################################  
+script:
+
+  #-------------------------------------------------
+  # push mmWave configuration
+  #-------------------------------------------------
+  - id: update_mmwave_config
+    then:
+      - switch.turn_off: mmwave_cfg_need_update
+      - uart.write: "sensorStop\r\n"
+      - delay: 1s
+      - uart.write: !lambda
+            int cm = (int)ceil(id(mmwave_range).state / 15.0);
+            std::string cms = "detRangeCfg -1 0 " + to_string(cm) + "\r\n";
+            return std::vector<unsigned char>(cms.begin(), cms.end()); 
+      - delay: 0.1s
+      - uart.write: !lambda
+            int ms = (int)ceil(id(mmwave_latency).state / 25.0);
+            std::string mss = "outputLatency -1 0 " + to_string(ms) + "\r\n";
+            return std::vector<unsigned char>(mss.begin(), mss.end());
+      - delay: 0.1s
+      - uart.write: !lambda
+            std::string mss = "setSensitivity " + to_string((int)id(mmwave_sensitivity).state) + "\r\n";
+            return std::vector<unsigned char>(mss.begin(), mss.end());
+      - delay: 0.1s
+      - uart.write: !lambda
+            std::string mss = "setLedMode 1 " + to_string(!(int)id(mmwave_status_led).state) + "\r\n";
+            return std::vector<unsigned char>(mss.begin(), mss.end());
+      - delay: 0.1s
+      - uart.write: "saveCfg 0x45670123 0xCDEF89AB 0x956128C6 0xDF54AC89\r\n"
+      - delay: 3s
+      - uart.write: "sensorStart\r\n"
+      - delay: 1s
